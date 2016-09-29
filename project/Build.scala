@@ -5,7 +5,11 @@ object FPInScalaBuild extends Build {
   val opts = Project.defaultSettings ++ Seq(
     scalaVersion := "2.11.5",
     resolvers += "Typesafe Repository" at "http://repo.typesafe.com/typesafe/releases/"
+
   )
+
+  val dependencies = Seq( "org.scalactic" %% "scalactic" % "3.0.0",
+    "org.scalatest" %% "scalatest" % "3.0.0" % "test")
 
   lazy val root =
     Project(id = "fpinscala",
@@ -20,7 +24,7 @@ object FPInScalaBuild extends Build {
   lazy val exercises =
     Project(id = "exercises",
             base = file("exercises"),
-            settings = opts)
+            settings = opts).settings(libraryDependencies ++= dependencies)
   lazy val answers =
     Project(id = "answers",
             base = file("answers"),
