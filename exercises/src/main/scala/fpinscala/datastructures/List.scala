@@ -80,11 +80,26 @@ object List { // `List` companion object. Contains functions for creating and wo
     case Cons(h, t) => foldLeft(t, f(z, h))(f)
   }
 
-  //def append[A](l1: List[A], l2: List[A]) = foldLeft()
 
   def map[A,B](l: List[A])(f: A => B): List[B] = foldLeft(l, Nil:List[B])((acc, h) => Cons(f(h), acc))
 
   def filter[A](l: List[A], f: A => Boolean): List[A] = foldRight(l, Nil:List[A])((a:A,b:List[A]) => if (f(a)) Cons(a,b) else b)
 
   def reverse[A](l: List[A]): List[A] = foldLeft(l, Nil:List[A])((b, a) => Cons(a,b))
+
+  def appendUsingFold[A](l1: List[A], l2: List[A]) = foldRight(l1, l2)((a, lb) => Cons(a, lb) )
+
+  def concatenateLists[A](l: List[List[A]]):List[A] = foldLeft(l, Nil:List[A])((la, lb) => append(la,lb))
+
+  def flatMap[A,B](as: List[A])(f: A => List[B]): List[B] = foldLeft(as, Nil:List[B])((lb, a) => append(lb, f(a)))
+
+  def filterViaFlatMap[A](l: List[A], f: A => Boolean): List[A] = flatMap(l)((x) => if (f(x)) List(x) else Nil:List[A])
+
+  def zipWith[A](la: List[A], lb:List[A])(f: (A,A) => A): List[A] = la match {
+    case Cons(h,t) => lb match {
+      case Nil => throw sys.error("mismatched zip length")
+      case Cons(h1,t1) => Cons(f(h,h1), zipWith(t,t1)(f))
+    }
+    case Nil => Nil
+  }
 }
