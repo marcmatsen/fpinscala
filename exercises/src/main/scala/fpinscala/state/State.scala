@@ -89,16 +89,40 @@ object RNG {
     sequence(l)(rng)
   }
 
-  def flatMap[A,B](f: Rand[A])(g: A => Rand[B]): Rand[B] = ???
+  def flatMap[A,B](f: Rand[A])(g: A => Rand[B]): Rand[B] = {
+    rng => {
+      val (a,r) = f(rng)
+      g(a)(r)
+    }
+  }
+
+  def mapByFlatMap[A,B](s: Rand[A])(f: A => B): Rand[B] = flatMap(s)(x => unit(f(x)))
+
+//  def map2ByFlatMap[A,B,C](ra: Rand[A], rb: Rand[B])(f: (A, B) => C): Rand[C] = {
+//    flatMap()
+//  }
+
 }
 
+
+
 case class State[S,+A](run: S => (A, S)) {
-  def map[B](f: A => B): State[S, B] =
-    sys.error("todo")
+  def map[B](f: A => B): State[S, B] = State(x => {
+    val (x1,r1) = run(x)
+    (f(x1), r1)
+  })
+
   def map2[B,C](sb: State[S, B])(f: (A, B) => C): State[S, C] =
     sys.error("todo")
-  def flatMap[B](f: A => State[S, B]): State[S, B] =
-    sys.error("todo")
+
+  def flatMap[B](f: A => State[S, B]): State[S, B] = State({
+    s => {
+      val (a,s1) = run(s)
+      f(a).run(s1)
+    }
+  })
+
+
 }
 
 sealed trait Input
