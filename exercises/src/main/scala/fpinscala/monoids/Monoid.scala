@@ -20,17 +20,31 @@ object Monoid {
     val zero = Nil
   }
 
-  val intAddition: Monoid[Int] = sys.error("todo")
+  val intAddition: Monoid[Int] = new Monoid[Int] {
+    def op(i1: Int, i2: Int) = i1 + i2
+    val zero = 0
+  }
 
-  val intMultiplication: Monoid[Int] = sys.error("todo")
+  val intMultiplication: Monoid[Int] = new Monoid[Int] {
+    def op(i1: Int, i2: Int) = i1 * i2
+    val zero = 1
+  }
 
-  val booleanOr: Monoid[Boolean] = sys.error("todo")
+  val booleanOr: Monoid[Boolean] = new Monoid[Boolean] {
+    def op(b1: Boolean, b2: Boolean) = b1 || b2
+    val zero = false
+  }
 
-  val booleanAnd: Monoid[Boolean] = sys.error("todo")
+  val booleanAnd: Monoid[Boolean] = new Monoid[Boolean] {
+    def op(b1: Boolean, b2: Boolean) = b1 && b2
+    val zero = true
+  }
 
-  def optionMonoid[A]: Monoid[Option[A]] = sys.error("todo")
-
-  def endoMonoid[A]: Monoid[A => A] = sys.error("todo")
+//  def optionMonoid[A]: Monoid[Option[A]] = {
+//
+//  }
+//
+//  def endoMonoid[A]: Monoid[A => A] = sys.error("todo")
 
   // TODO: Placeholder for `Prop`. Remove once you have implemented the `Prop`
   // data type from Part 2.
@@ -40,32 +54,60 @@ object Monoid {
   // data type from Part 2.
 
   import fpinscala.testing._
-  import Prop._
-  def monoidLaws[A](m: Monoid[A], gen: Gen[A]): Prop = sys.error("todo")
+  //import Prop._
+  //def monoidLaws[A](m: Monoid[A], gen: Gen[A]): Prop = sys.error("todo")
 
   def trimMonoid(s: String): Monoid[String] = sys.error("todo")
 
   def concatenate[A](as: List[A], m: Monoid[A]): A =
-    sys.error("todo")
+    as.foldLeft(m.zero)(m.op)
 
   def foldMap[A, B](as: List[A], m: Monoid[B])(f: A => B): B =
-    sys.error("todo")
+    as.map(f).foldRight(m.zero)(m.op)
 
-  def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B): B =
-    sys.error("todo")
+//  def foldRight[A, B](as: List[A])(z: B)(f: (A, B) => B): B =
+//    sys.error("todo")
+//
+//  def foldLeft[A, B](as: List[A])(z: B)(f: (B, A) => B): B =
+//    sys.error("todo")
 
-  def foldLeft[A, B](as: List[A])(z: B)(f: (B, A) => B): B =
-    sys.error("todo")
+  def foldMapV[A, B](as: IndexedSeq[A], m: Monoid[B])(f: A => B): B = {
+    val l = as.length
+    val x = as
+    if (l == 0) m.zero
+    else if (l == 1) f(as(0))
+    else {
+      val h = l / 2
+      m.op(foldMapV(as.slice(0, h),m)(f),
+        foldMapV(as.slice(h + 1, l - 1), m)(f))
+    }
+  }
 
-  def foldMapV[A, B](as: IndexedSeq[A], m: Monoid[B])(f: A => B): B =
-    sys.error("todo")
+//  def ordered(ints: IndexedSeq[Int]): Boolean = {
+//    val order:Monoid[Option[Int]] = new Monoid[Option[Int]]{
+//      val zero = Some(Int.MinValue)
+//      def op(a:Option[Int],b:Option[Int]) = {
+//        a match {
+//          case Some(aa) => b match {
+//            case Some(bb) => if (aa < bb) Some(bb) else None
+//            case _ => None
+//          }
+//          case _ => None
+//        }
+//      }
+//    }
+//    foldMapV(ints,order)(Some(_)) match {
+//      case None => false
+//      case _ => true
+//    }
+//  }
 
-  def ordered(ints: IndexedSeq[Int]): Boolean =
-    sys.error("todo")
 
   sealed trait WC
   case class Stub(chars: String) extends WC
   case class Part(lStub: String, words: Int, rStub: String) extends WC
+
+
 
   def par[A](m: Monoid[A]): Monoid[Par[A]] = 
     sys.error("todo")

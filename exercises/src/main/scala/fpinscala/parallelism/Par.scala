@@ -6,7 +6,7 @@ object Par {
   type Par[A] = ExecutorService => Future[A]
   
   def run[A](s: ExecutorService)(a: Par[A]): Future[A] = a(s)
-
+  def lazyUnit[A](a: => A): Par[A] = fork(unit(a))
   def unit[A](a: A): Par[A] = (es: ExecutorService) => UnitFuture(a) // `unit` is represented as a function that returns a `UnitFuture`, which is a simple implementation of `Future` that just wraps a constant value. It doesn't use the `ExecutorService` at all. It's always done and can't be cancelled. Its `get` method simply returns the value that we gave it.
   
   private case class UnitFuture[A](get: A) extends Future[A] {
@@ -43,6 +43,47 @@ object Par {
     es => 
       if (run(es)(cond).get) t(es) // Notice we are blocking on the result of `cond`.
       else f(es)
+
+  def choiceN[A](cond: Par[Int])(l: List[Par[A]]): Par[A] = (es) => l(cond(es).get())(es)
+
+  def choiceByChoiceN[A](cond: Par[Boolean])(t: Par[A], f: Par[A]): Par[A] =
+    es => {
+      val x = if (cond(es).get()) 0 else 1
+      choiceN(unit(x))(List(t,f))(es)
+    }
+
+  def chooser[A,B](pa: Par[A])(choices: A => Par[B]): Par[B] = {
+    es => {
+      choices(pa(es).get())(es)
+    }
+  }
+
+  def join[A](a: Par[Par[A]]): Par[A] = {
+    es => a(es).get()(es)
+  }
+
+  def flatMapByJoin[A,B](pa: Par[A])(f: A => Par[B]): Par[B] = join(map(pa)(f))
+
+
+
+
+  def asyncF[A,B](f: A => B): A => Par[B] = (a:A) => lazyUnit(f(a))
+
+
+  //ugh
+  def sequence[A](ps: List[Par[A]]): Par[List[A]] =
+    ps.foldRight[Par[List[A]]](unit(List[A]()))((a, b) => map2(a,b)(_ :: _))
+
+  def parFilter[A](as: List[A])(f: A => Boolean): Par[List[A]] = {
+    val l:List[Par[Option[A]]] = as.map(Par.asyncF(x => if (f(x)) Some(x) else None))
+    val l2:Par[List[Option[A]]] = sequence(l)
+    map(l2)(_.foldRight(List[A]())((o,b) => o match {
+      case Some(x) => x :: b
+      case None => b
+    }))
+  }
+
+
 
   /* Gives us infix syntax for `Par`. */
   implicit def toParOps[A](p: Par[A]): ParOps[A] = new ParOps(p)
